@@ -25,6 +25,7 @@ class DetailVC: UIViewController {
     var deletedIndex: [IndexPath]!
     var updatedIndex: [IndexPath]!
     
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         collectionView.delegate = self
@@ -53,38 +54,22 @@ class DetailVC: UIViewController {
         newCollectionButton.setTitleColor(.gray, for: .normal)
         navigationItem.hidesBackButton = true
         
-        FlickrClien.loadList(dataController:dataController, latitude: pinSelected.latitude, longitude: pinSelected.longitude, page: page) {(photosWithPages, error) in
+        pinSelected.photos?.forEach({ (Photo) in
+            dataController.viewContext.delete(Photo as! NSManagedObject)
+            try? dataController.viewContext.save()
+
+        })
+        
+        self.pinSelected.removeFromPhotos(self.pinSelected.photos!)
+        try? self.dataController.viewContext.save()
+        
+        FlickrClien.loadList(pinSelected: pinSelected, dataController:dataController, latitude: pinSelected.latitude, longitude: pinSelected.longitude, page: page) {(photosWithPages, error) in
             guard error == nil else { return }
+            self.newCollectionButton.isEnabled = true
+            self.newCollectionButton.setTitleColor(.white, for: .normal)
+            self.navigationItem.hidesBackButton = false
+            return
             
-            DispatchQueue.main.async {
-                
-                self.pinSelected.photos?.forEach({ (Photo) in
-                    self.dataController.viewContext.delete(Photo as! NSManagedObject)
-                    try? self.dataController.viewContext.save()
-                    
-                })
-                
-                self.pinSelected.removeFromPhotos(self.pinSelected.photos!)
-                self.pinSelected.pagesCount = Int32(photosWithPages!.pages)
-                try? self.dataController.viewContext.save()
-    
-                photosWithPages!.photos.forEach({ (photo) in
-                    photo.pin = self.pinSelected
-                    FlickrClien.loadPhoto(photo: photo) { (data, error) in
-                        if (error != nil) { return }
-                        photo.photo = data
-                        DispatchQueue.main.async {
-                            try? self.dataController.backgroundContext.save()
-                        }
-                    }
-                })
-                try? self.dataController.viewContext.save()
-                
-                self.newCollectionButton.isEnabled = true
-                self.newCollectionButton.setTitleColor(.white, for: .normal)
-                self.navigationItem.hidesBackButton = false
-                
-            }
         }
     }
     
@@ -135,8 +120,7 @@ extension DetailVC: UICollectionViewDelegate, UICollectionViewDataSource {
         dataController.viewContext.delete(fetchedResultsController.object(at: indexPath))
         try? dataController.viewContext.save()
     }
-    
-    
+
 }
 
 extension DetailVC:NSFetchedResultsControllerDelegate {

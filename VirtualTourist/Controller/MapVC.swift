@@ -23,14 +23,16 @@ class MapVC: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         mapView.delegate = self
-        updatePins()
-        
         let gestureRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(longPress))
         gestureRecognizer.minimumPressDuration = 2.0
         gestureRecognizer.delegate = self
         mapView.addGestureRecognizer(gestureRecognizer)
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        updatePins()
+        super.viewWillAppear(animated)
     }
     
     func updatePins() {

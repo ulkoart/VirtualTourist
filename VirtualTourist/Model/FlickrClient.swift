@@ -9,6 +9,7 @@
 // Secret 0435ce416300c6d9
 
 import Foundation
+import CoreData
 
 
 class FlickrClien {
@@ -23,6 +24,7 @@ class FlickrClien {
         static let apiKey = "a380593eadbd15569a58b146ddc4ab6a"
         static let baseUrl = "https://api.flickr.com/services/rest/?"
         
+        
         case list(latitude:Double, longitude:Double, page:Int)
         case detail(farmId: String, serverId:String, photoId: String, secret: String)
         
@@ -33,7 +35,7 @@ class FlickrClien {
         var stringValue: String {
             switch self {
             case .list(let latitude, let longitude, let page):
-                return "\(FlickrClien.Endpoints.baseUrl)method=flickr.photos.search&api_key=\(FlickrClien.Endpoints.apiKey)&format=json&privacy_filter=1&lat=\(latitude)&lon=\(longitude)&nojsoncallback=1&per_page=50&page=\(page)"
+                return "\(FlickrClien.Endpoints.baseUrl)method=flickr.photos.search&api_key=\(FlickrClien.Endpoints.apiKey)&format=json&privacy_filter=1&lat=\(latitude)&lon=\(longitude)&nojsoncallback=1&per_page=5&page=\(page)"
             case .detail(let farmId, let serverId, let photoId, let secret):
                 return "https://farm\(farmId).staticflickr.com/\(serverId)/\(photoId)_\(secret)_s.jpg"
                 
@@ -60,12 +62,18 @@ extension FlickrClien {
         
     }
     
-    class func loadList(dataController: DataController, latitude: Double, longitude: Double, page: Int, completionHandler: @escaping (PhotosWithPagesCount?, Error?) -> Void) {
+    class func loadList(pinSelected: Pin, dataController: DataController, latitude: Double, longitude: Double, page: Int, completionHandler: @escaping (PhotosWithPagesCount?, Error?) -> Void) {
         
         let _ = taskGETRequest(url: Endpoints.list(latitude: latitude, longitude: longitude, page: page).url, responseType: PhotosResponse.self) { data, error in
             guard let data = data else {
                 completionHandler(nil, error)
                 return
+            }
+            
+            print(Endpoints.list(latitude: latitude, longitude: longitude, page: page).url)
+            print (page)
+            data.photos.photo.forEach { (photo) in
+                print(photo.secret)
             }
             
             let items = data.photos.photo.map { (photoResponse) -> Photo in
@@ -76,10 +84,38 @@ extension FlickrClien {
                 photo.secret = photoResponse.secret
                 return photo
             }
-            //            try? dataController.viewContext.save()
+            try? dataController.viewContext.save()
             
             let photosWithPagesCount = PhotosWithPagesCount(pages: data.photos.pages, photos: items)
             
+                DispatchQueue.main.async {
+                    pinSelected.pagesCount = Int32(photosWithPagesCount.pages)
+                    
+//                    pinSelected.removeFromPhotos(pinSelected.photos!)
+//                    try? dataController.viewContext.save()
+//
+//                    pinSelected.photos?.forEach({ (Photo) in
+//                        dataController.viewContext.delete(Photo as! NSManagedObject)
+//                        try? dataController.viewContext.save()
+//
+//                    })
+                    
+                    photosWithPagesCount.photos.forEach({ (photo) in
+                        photo.pin = pinSelected
+                        FlickrClien.loadPhoto(photo: photo) { (data, error) in
+                            if (error != nil) {
+                                print ("loadPhoto error")
+                                return
+                            }
+                            photo.photo = data
+                            DispatchQueue.main.async {
+                                try? dataController.backgroundContext.save()
+                            }
+                        }
+                    })
+                    try? dataController.viewContext.save()
+                }
+
             completionHandler(photosWithPagesCount, nil)
         }
         

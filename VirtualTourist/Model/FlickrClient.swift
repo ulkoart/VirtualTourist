@@ -90,16 +90,7 @@ extension FlickrClien {
             
                 DispatchQueue.main.async {
                     pinSelected.pagesCount = Int32(photosWithPagesCount.pages)
-                    
-//                    pinSelected.removeFromPhotos(pinSelected.photos!)
-//                    try? dataController.viewContext.save()
-//
-//                    pinSelected.photos?.forEach({ (Photo) in
-//                        dataController.viewContext.delete(Photo as! NSManagedObject)
-//                        try? dataController.viewContext.save()
-//
-//                    })
-                    
+                                        
                     photosWithPagesCount.photos.forEach({ (photo) in
                         photo.pin = pinSelected
                         FlickrClien.loadPhoto(photo: photo) { (data, error) in

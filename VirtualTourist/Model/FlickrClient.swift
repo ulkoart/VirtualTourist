@@ -35,7 +35,7 @@ class FlickrClien {
         var stringValue: String {
             switch self {
             case .list(let latitude, let longitude, let page):
-                return "\(FlickrClien.Endpoints.baseUrl)method=flickr.photos.search&api_key=\(FlickrClien.Endpoints.apiKey)&format=json&privacy_filter=1&lat=\(latitude)&lon=\(longitude)&nojsoncallback=1&per_page=5&page=\(page)"
+                return "\(FlickrClien.Endpoints.baseUrl)method=flickr.photos.search&api_key=\(FlickrClien.Endpoints.apiKey)&format=json&privacy_filter=1&lat=\(latitude)&lon=\(longitude)&nojsoncallback=1&per_page=50&page=\(page)"
             case .detail(let farmId, let serverId, let photoId, let secret):
                 return "https://farm\(farmId).staticflickr.com/\(serverId)/\(photoId)_\(secret)_s.jpg"
                 
